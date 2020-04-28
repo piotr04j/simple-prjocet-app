@@ -53,6 +53,36 @@ const autobinding = (_: any, _2: string, descriptor: PropertyDescriptor) => {
     return adjustedDescriptor
 }
 
+class ProjectList {
+    templateEl: HTMLTemplateElement
+    hostEl: HTMLDivElement
+    importNode: DocumentFragment
+    element: HTMLElement
+
+    constructor(private projectStatus: 'active' | 'finished') {
+        this.templateEl = <HTMLTemplateElement>document.getElementById('project-list')!
+        this.hostEl = <HTMLDivElement>document.getElementById('app')!
+        this.importNode = document.importNode(this.templateEl.content, true)
+        this.element = <HTMLElement>this.importNode.firstElementChild
+        this.element.id = `${this.projectStatus}-projects`
+    }
+
+    private attach() {
+        this.hostEl.insertAdjacentElement('beforeend', this.element)
+    }
+
+    private renderContent() {
+        const listId = `${this.projectStatus}-projects-list`;
+        this.element.querySelector('ul')!.id = listId;
+        this.element.querySelector('h2')!.textContent = this.projectStatus.toUpperCase() + ' PROJECTS';
+    }
+
+    public init() {
+        this.attach()
+        this.renderContent()
+    }
+}
+
 class ProjectInput {
     templateEl: HTMLTemplateElement
     hostEl: HTMLDivElement
@@ -134,3 +164,10 @@ class ProjectInput {
 
 const projectInput = new ProjectInput()
 projectInput.init()
+
+const activeProjectList = new ProjectList('active')
+activeProjectList.init()
+
+const finishedProjectList = new ProjectList('finished')
+finishedProjectList.init()
+
