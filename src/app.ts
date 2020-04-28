@@ -1,3 +1,45 @@
+interface Validatable {
+    value: string | number
+    required?: boolean
+    minLength?: number
+    maxLength?: number
+    min?: number
+    max?: number
+}
+
+const validate = (inputToValidation: Validatable) => {
+    let isValid = true
+    if (inputToValidation.required) {
+        isValid = isValid && inputToValidation.value.toString().trim().length !== 0
+    }
+
+    if (inputToValidation.minLength) {
+       if (typeof inputToValidation.value === 'string') {
+           isValid = isValid && inputToValidation.value.length > inputToValidation.minLength
+       }
+    }
+
+    if (inputToValidation.maxLength) {
+        if (typeof inputToValidation.value === 'string') {
+            isValid = isValid && inputToValidation.value.length < inputToValidation.maxLength
+        }
+    }
+
+    if (inputToValidation.min) {
+        if (typeof inputToValidation.value === 'number') {
+            isValid = isValid && inputToValidation.value > inputToValidation.min
+        }
+    }
+
+    if (inputToValidation.max) {
+        if (typeof inputToValidation.value === 'number') {
+            isValid = isValid && inputToValidation.value < inputToValidation.max
+        }
+    }
+    console.log(inputToValidation.value + ':' + isValid)
+    return isValid
+}
+
 const autobinding = (_: any, _2: string, descriptor: PropertyDescriptor) => {
     const originalMethod =  descriptor.value
     const adjustedDescriptor: PropertyDescriptor = {
@@ -30,12 +72,36 @@ class ProjectInput {
         this.peopleInputEl = <HTMLInputElement>this.element.querySelector('#people')
     }
 
-    private gatherUserData(): [string, string, number] {
+    private gatherUserData(): [string, string, number] | void{
         const enteredTitle = this.titleInputEl.value
         const enteredDescription = this.descriptionInputEl.value
         const enteredPeople = this.peopleInputEl.value
 
-        return [enteredTitle, enteredDescription, parseInt(enteredPeople)]
+        const titleValidatable: Validatable = {
+            value: enteredTitle,
+            required: true
+        }
+        const descriptionValidatable: Validatable = {
+            value: enteredDescription,
+            required: true,
+            minLength: 5
+        }
+        const peopleValidatable: Validatable = {
+            value: +enteredPeople,
+            required: true,
+            min: 1,
+            max: 4
+        }
+        if (
+            validate(titleValidatable) &&
+            validate(descriptionValidatable) &&
+            validate(peopleValidatable)
+        ) {
+            return [enteredTitle, enteredDescription, parseInt(enteredPeople)]
+        } else {
+            alert('Invalid input, please try again!')
+        }
+
     }
 
     @autobinding
