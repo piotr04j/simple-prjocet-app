@@ -1,3 +1,64 @@
+type Listener = (projects: Project[]) => void
+
+enum ProjectStatus {
+    Active,
+    Finished
+}
+
+class Project {
+    constructor(
+        public id: string,
+        public title: string,
+        public description: string,
+        public people: number,
+        public status: ProjectStatus
+    ) {}
+}
+
+class ProjectState {
+    static instance: ProjectState
+    private projects: Project[] = []
+    private listeners: Listener[] = []
+
+    private constructor() {
+
+    }
+
+    public static getInstance(): ProjectState {
+        if(ProjectState.instance) {
+            return ProjectState.instance
+        }
+        ProjectState.instance = new ProjectState()
+
+        return ProjectState.instance
+    }
+
+    addProject(title: string, description: string, people: number) {
+        const newProject = new Project(
+            Math.random().toString(),
+            title,
+            description,
+            people,
+            ProjectStatus.Active
+        )
+
+        this.projects.push(newProject)
+        this.callListeners(this.projects )
+    }
+
+    addListeners(listenerFn: Listener) {
+        this.listeners.push(listenerFn)
+    }
+
+    callListeners(project: Project[]) {
+        this.listeners.forEach( foo => {
+            foo([...project])
+        })
+    }
+}
+
+const projectState = ProjectState.getInstance()
+
 interface Validatable {
     value: string | number
     required?: boolean
@@ -58,6 +119,7 @@ class ProjectList {
     hostEl: HTMLDivElement
     importNode: DocumentFragment
     element: HTMLElement
+    assignedProjects: any[] = []
 
     constructor(private projectStatus: 'active' | 'finished') {
         this.templateEl = <HTMLTemplateElement>document.getElementById('project-list')!
@@ -72,12 +134,25 @@ class ProjectList {
     }
 
     private renderContent() {
-        const listId = `${this.projectStatus}-projects-list`;
-        this.element.querySelector('ul')!.id = listId;
-        this.element.querySelector('h2')!.textContent = this.projectStatus.toUpperCase() + ' PROJECTS';
+        const listId = `${this.projectStatus}-projects-list`
+        this.element.querySelector('ul')!.id = listId
+        this.element.querySelector('h2')!.textContent = this.projectStatus.toUpperCase() + ' PROJECTS'
+    }
+
+    private renderProjects() {
+        const listEl = <HTMLUListElement>document.getElementById(`${this.projectStatus}-projects-list`)!
+        this.assignedProjects.forEach( (project: Project) => {
+            const listItem = document.createElement('li')
+            listItem.textContent = project.title
+            listEl.appendChild(listItem)
+        })
     }
 
     public init() {
+        projectState.addListeners((projects: Project[]) => {
+            this.assignedProjects = projects
+            this.renderProjects()
+        })
         this.attach()
         this.renderContent()
     }
@@ -102,7 +177,7 @@ class ProjectInput {
         this.peopleInputEl = <HTMLInputElement>this.element.querySelector('#people')
     }
 
-    private gatherUserData(): [string, string, number] | void{
+    private gatherUserData(): [string, string, number] | void {
         const enteredTitle = this.titleInputEl.value
         const enteredDescription = this.descriptionInputEl.value
         const enteredPeople = this.peopleInputEl.value
@@ -138,7 +213,9 @@ class ProjectInput {
     private submitHandler(event: Event) {
         event.preventDefault()
         const userInputs = this.gatherUserData()
-        console.log(userInputs)
+        if (userInputs) {
+            projectState.addProject(...userInputs)
+        }
         this.clearInputs()
     }
 
