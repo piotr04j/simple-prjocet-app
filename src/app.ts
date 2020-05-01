@@ -1,6 +1,5 @@
 interface Draggable {
     dragStartHandler(event: DragEvent): void
-    dragEndHandler(event: DragEvent): void
 }
 
 interface DragTarget {
@@ -54,7 +53,7 @@ class ProjectState {
         )
 
         this.projects.push(newProject)
-        this.callListeners(this.projects )
+        this.callListeners(this.projects)
     }
 
     addListeners(listenerFn: Listener) {
@@ -65,6 +64,14 @@ class ProjectState {
         this.listeners.forEach( foo => {
             foo([...project])
         })
+    }
+
+    moveProject(projectId: string, newStatus: ProjectStatus) {
+        const project = this.projects.find(project => project.id === projectId)
+        if (project && project.status !== newStatus) {
+            project.status = newStatus
+            this.callListeners(this.projects)
+        }
     }
 }
 
@@ -168,18 +175,12 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements 
         event.dataTransfer!.effectAllowed = 'move'
     }
 
-    @autobinding
-    dragEndHandler(_: DragEvent): void {
-        console.log('drag end')
-    }
-
     attach(insertPlace: "beforebegin" | "afterbegin" | "beforeend" | "afterend") {
         super.attach(insertPlace);
     }
 
     configure() {
         this.element.addEventListener('dragstart', this.dragStartHandler)
-        this.element.addEventListener('dragend', this.dragEndHandler)
     }
 
     renderContent() {
@@ -213,7 +214,8 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> implements Drag
 
     @autobinding
     dropHandler(event: DragEvent) {
-        console.log(event)
+        const projectId = event.dataTransfer!.getData('text/plain')
+        projectState.moveProject(projectId, this.projectStatus === 'active' ? ProjectStatus.Active : ProjectStatus.Finished)
     }
 
     @autobinding
