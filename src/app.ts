@@ -97,7 +97,7 @@ const validate = (inputToValidation: Validatable) => {
             isValid = isValid && inputToValidation.value < inputToValidation.max
         }
     }
-    console.log(inputToValidation.value + ':' + isValid)
+
     return isValid
 }
 
@@ -107,6 +107,7 @@ const autobinding = (_: any, _2: string, descriptor: PropertyDescriptor) => {
         configurable: true,
         get(): any {
             const boundFn = originalMethod.bind(this)
+
             return boundFn
         }
     }
@@ -135,6 +136,38 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 
     abstract configure(): void
     abstract renderContent(): void
+}
+
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement>{
+    private project: Project
+
+    get people(): string {
+        const peopleNumber = this.project.people
+        return peopleNumber === 1 ? peopleNumber.toString() + ' person' : peopleNumber.toString() + ' people'
+    }
+
+    constructor(hotsId: string, project: Project) {
+        super('single-project', hotsId, project.id)
+        this.project = project
+    }
+
+    attach(insertPlace: "beforebegin" | "afterbegin" | "beforeend" | "afterend") {
+        super.attach(insertPlace);
+    }
+
+    configure() {
+    }
+
+    renderContent() {
+        this.element.querySelector('h2')!.textContent = this.project.title
+        this.element.querySelector('h3')!.textContent = this.people + ' assigned'
+        this.element.querySelector('p')!.textContent = this.project.description
+    }
+
+    init() {
+        this.renderContent()
+        this.attach('beforeend')
+    }
 }
 
 class ProjectList extends Component<HTMLDivElement, HTMLElement>{
@@ -174,9 +207,7 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement>{
         const listEl = <HTMLUListElement>document.getElementById(`${this.projectStatus}-projects-list`)!
         listEl.innerHTML = ''
         this.assignedProjects.forEach( (project: Project) => {
-            const listItem = document.createElement('li')
-            listItem.textContent = project.title
-            listEl.appendChild(listItem)
+           new ProjectItem(this.element.querySelector('ul')!.id, project).init()
         })
     }
 }
